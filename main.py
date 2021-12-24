@@ -68,9 +68,10 @@ def calculations(window_size=1000):
                 else:
                     break
 
-migrator = threading.Thread(target=migrate_data)
-calculator = threading.Thread(target=calculations)
-migrator.start()
-calculator.start()
-migrator.join()
-calculator.join()
+if __name__ =='__main__':
+    migrator = threading.Thread(target=migrate_data)
+    calculator = threading.Thread(target=calculations)
+    migrator.start()
+    calculator.start()
+    migrator.join()
+    calculator.join()
