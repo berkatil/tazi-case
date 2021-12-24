@@ -43,7 +43,7 @@ def calculate_matrix_values(df):
 
 def calculations(window_size=1000):
     conn2 = psycopg2.connect(
-    database="tazi", user='postgres', password='123456789', host='localhost'
+    database="", user='', password='', host='localhost'
 )
     conn2.autocommit=True
     cursor2 = conn2.cursor()
