@@ -1,3 +1,4 @@
+from collections import deque
 import pandas as pd
 import numpy as np
 import psycopg2
@@ -54,14 +55,23 @@ def calculations(window_size=1000):
         if current_row >= window_size:
             break
     first_index = 1
+    cursor2.execute(f"SELECT * from predictions where id>={first_index} and id<{first_index+window_size}")
+    rows = cursor2.fetchall()
+    first_index = rows[-1][0]
+    data = deque(rows)
+    last_row = rows[-1]
     while(True):
-        cursor2.execute(f"SELECT * from predictions where id>={first_index} and id<{first_index+window_size}")
-        rows = cursor2.fetchall()
-        if len(rows)==window_size:
-            df = pd.DataFrame(rows, columns =['id','given_label','model1_a','model1_b','model2_a','model2_b','model3_a','model3_b'])
+        if last_row:
+            df = pd.DataFrame(data, columns =['id','given_label','model1_a','model1_b','model2_a','model2_b','model3_a','model3_b'])
             tp,fn,tn,fp = calculate_matrix_values(df)
             cursor2.execute(f"INSERT INTO confusion_matrix (a_a,a_b,b_a,b_b) VALUES ({tp},{fn},{fp},{tn})")
-            first_index+=1
+            first_index = last_row[0]
+            
+        cursor2.execute(f"SELECT * from predictions where id>{first_index} limit 1")
+        last_row = cursor2.fetchone()
+        if last_row:
+            data.popleft()
+            data.append(last_row)
 
 if __name__ =='__main__':
     migrator = threading.Thread(target=migrate_data)
