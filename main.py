@@ -6,13 +6,13 @@ import threading
 import time
 
 conn = psycopg2.connect(
-   database="tazi", user='postgres', password='123456789', host='localhost'
+   database="", user='', password='', host=''
 )
 cursor = conn.cursor()
 
 def migrate_data():
     conn = psycopg2.connect(
-   database="tazi", user='postgres', password='123456789', host='localhost'
+   database="", user='', password='', host=''
 )
     cursor = conn.cursor()
     psycopg2.extensions.register_adapter(np.int64, psycopg2._psycopg.AsIs)
@@ -43,7 +43,7 @@ def calculate_matrix_values(df):
 
 def calculations(window_size=1000):
     conn2 = psycopg2.connect(
-    database="", user='', password='', host='localhost'
+    database="", user='', password='', host=''
 )
     conn2.autocommit=True
     cursor2 = conn2.cursor()
@@ -55,18 +55,13 @@ def calculations(window_size=1000):
             break
     first_index = 1
     while(True):
-        cursor2.execute(f"SELECT * from predictions where id>={first_index}")
+        cursor2.execute(f"SELECT * from predictions where id>={first_index} and id<{first_index+window_size}")
         rows = cursor2.fetchall()
-        if len(rows)>0:
-            for i in range(0,len(rows)):
-                if i+window_size-1<=len(rows):
-                    process_rows = rows[i:i+window_size]
-                    df = pd.DataFrame(process_rows, columns =['id','given_label','model1_a','model1_b','model2_a','model2_b','model3_a','model3_b'])
-                    tp,fn,tn,fp = calculate_matrix_values(df)
-                    cursor2.execute(f"INSERT INTO confusion_matrix (a_a,a_b,b_a,b_b) VALUES ({tp},{fn},{fp},{tn})")
-                    first_index+=1
-                else:
-                    break
+        if len(rows)==window_size:
+            df = pd.DataFrame(rows, columns =['id','given_label','model1_a','model1_b','model2_a','model2_b','model3_a','model3_b'])
+            tp,fn,tn,fp = calculate_matrix_values(df)
+            cursor2.execute(f"INSERT INTO confusion_matrix (a_a,a_b,b_a,b_b) VALUES ({tp},{fn},{fp},{tn})")
+            first_index+=1
 
 if __name__ =='__main__':
     migrator = threading.Thread(target=migrate_data)
